@@ -34,38 +34,30 @@ export class Renderer {
 
   /** 计算游戏板布局 */
   _calculateLayout(w, h) {
-    // 给操作按钮留底部空间，顶部留状态显示
-    const topMargin = h * 0.02;
-    const bottomMargin = h * 0.26;
-    const sideMargin = w * 0.02;
+    // 触控按钮面板高度（固定值，与 CSS 一致）
+    const buttonPanelH = Math.max(60, h * 0.1);
+    // 顶部信息栏高度（HOLD / 分数 / NEXT）
+    const topInfoH = Math.max(44, h * 0.05);
 
-    const availableW = w - sideMargin * 2;
-    const availableH = h - topMargin - bottomMargin;
+    // 棋盘可用高度 = 屏幕 - 顶部信息栏 - 触控按钮
+    const boardAreaH = h - topInfoH - buttonPanelH;
 
-    // 根据 available 空间计算 cellSize（同时考虑边栏宽度）
-    const sidePanelCells = 5; // 边栏宽度（cell 为单位）
-    const totalCols = COLS + sidePanelCells * 2; // 棋盘 + 左右边栏
-    const cellFromW = availableW / totalCols;
-    const cellFromH = availableH / ROWS;
+    // 根据宽高计算 cell 尺寸
+    const cellFromW = (w - 4) / COLS;
+    const cellFromH = boardAreaH / ROWS;
 
     this.cellSize = Math.floor(Math.min(cellFromW, cellFromH));
 
-    // 棋盘实际尺寸
+    // 棋盘像素尺寸
     this.boardPixelWidth = this.cellSize * COLS;
     this.boardPixelHeight = this.cellSize * ROWS;
 
-    // 总宽度 = 左面板 + 棋盘 + 右面板
-    const leftPanelW = this.cellSize * sidePanelCells;
-    const rightPanelW = this.cellSize * sidePanelCells;
-    const totalW = leftPanelW + this.boardPixelWidth + rightPanelW;
-    const totalH = this.boardPixelHeight;
+    // 棋盘居中
+    this.boardX = Math.floor((w - this.boardPixelWidth) / 2);
+    this.boardY = Math.floor((h - buttonPanelH - this.boardPixelHeight) / 2);
 
-    // 居中
-    this.boardX = (w - totalW) / 2 + leftPanelW;
-    this.boardY = topMargin;
-    this.panelLeftX = (w - totalW) / 2;
-    this.panelRightX = this.boardX + this.boardPixelWidth;
-    this.panelTop = topMargin;
+    // 顶部信息栏位置
+    this.topInfoY = Math.max(0, this.boardY - topInfoH);
   }
 
   /** 主渲染循环 */
@@ -215,68 +207,56 @@ export class Renderer {
     ctx.fillRect(x + innerSize - 2, y + inset, 2, innerSize);
   }
 
-  /** 绘制侧边栏信息 */
+  /** 绘制顶部信息栏（HOLD / 分数 / NEXT） */
   _drawSidePanels(game) {
     const ctx = this.ctx;
-    const { cellSize, panelLeftX, panelRightX, panelTop } = this;
+    const { cellSize, boardX, boardY, boardPixelWidth, topInfoY } = this;
+    const infoH = Math.max(40, this.topInfoY !== undefined ? boardY - topInfoY : 44);
+    const gap = 6;
 
-    const panelW = cellSize * 5;
-    const gap = cellSize * 0.5;
+    // 信息栏背景
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fillRect(boardX, topInfoY, boardPixelWidth, infoH);
 
-    // 左侧面板：Hold
-    this._drawPanel(
-      ctx, panelLeftX, panelTop, panelW, 'HOLD',
-      game.holdPiece, cellSize
-    );
+    // ─── 左：HOLD ───
+    const holdBoxW = cellSize * 2.2;
+    const holdBoxH = infoH - gap * 2;
+    this._drawMiniPanel(ctx, boardX + gap, topInfoY + gap, holdBoxW, holdBoxH, 'HOLD', game.holdPiece, cellSize);
 
-    // 右侧面板：Next + Score
-    const rightPanelY = panelTop;
-    this._drawPanel(
-      ctx, panelRightX, rightPanelY, panelW, 'NEXT',
-      game.nextPiece?.type || null, cellSize
-    );
+    // ─── 中：分数 ───
+    const centerX = boardX + boardPixelWidth / 2;
+    const infoY = topInfoY + infoH / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.font = `bold ${Math.min(14, cellSize * 0.45)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`得分 ${game.score}  等级 ${game.level}  行 ${game.lines}`, centerX, infoY + 4);
 
-    // 分数信息
-    const infoX = panelRightX;
-    const infoY = panelTop + cellSize * 4.5 + gap;
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = `bold ${cellSize * 0.5}px sans-serif`;
-    ctx.textAlign = 'left';
-
-    const stats = [
-      `得分 ${game.score}`,
-      `等级 ${game.level}`,
-      `行数 ${game.lines}`,
-    ];
-    stats.forEach((text, i) => {
-      ctx.fillText(text, infoX + 4, infoY + i * (cellSize * 0.7) + cellSize * 0.5);
-    });
+    // ─── 右：NEXT ───
+    const nextBoxW = cellSize * 2.2;
+    const nextBoxH = infoH - gap * 2;
+    this._drawMiniPanel(ctx, boardX + boardPixelWidth - nextBoxW - gap, topInfoY + gap, nextBoxW, nextBoxH, 'NEXT', game.nextPiece?.type || null, cellSize);
   }
 
-  /** 绘制信息面板 */
-  _drawPanel(ctx, x, y, width, label, pieceType, cellSize) {
-    const height = cellSize * 4;
-
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 1;
-    ctx.fillRect(x, y, width, height);
-    ctx.strokeRect(x, y, width, height);
+  /** 绘制迷你信息框（HOLD / NEXT） */
+  _drawMiniPanel(ctx, x, y, w, h, label, pieceType, cellSize) {
+    // 背景边框
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(x, y, w, h);
 
     // Label
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = `${cellSize * 0.45}px sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = `${Math.min(10, cellSize * 0.35)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(label, x + width / 2, y + cellSize * 0.7);
+    ctx.fillText(label, x + w / 2, y + 12);
 
     // Piece preview
     if (pieceType) {
       const shape = SHAPES[pieceType][0];
-      const previewCellSize = cellSize * 0.7;
-      const shapeRows = shape.length;
-      const shapeCols = shape[0].length;
-
-      // 计算实际占用格子数，居中
+      const ps = Math.min(cellSize * 0.4, 12);
+      // 居中
       let minC = 4, maxC = 0, minR = 4, maxR = 0;
       for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
@@ -286,20 +266,14 @@ export class Renderer {
           }
         }
       }
-      const pieceW = (maxC - minC + 1) * previewCellSize;
-      const pieceH = (maxR - minR + 1) * previewCellSize;
-      const offsetX = x + (width - pieceW) / 2 - minC * previewCellSize;
-      const offsetY = y + (height - pieceH) / 2 - minR * previewCellSize;
-
+      const pw = (maxC - minC + 1) * ps;
+      const ph = (maxR - minR + 1) * ps;
+      const ox = x + (w - pw) / 2 - minC * ps;
+      const oy = y + (h - ph) / 2 - minR * ps + 4;
       for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
           if (shape[r][c]) {
-            this._drawCell(ctx,
-              offsetX + c * previewCellSize,
-              offsetY + r * previewCellSize,
-              previewCellSize,
-              COLORS[pieceType]
-            );
+            this._drawCell(ctx, ox + c * ps, oy + r * ps, ps, COLORS[pieceType]);
           }
         }
       }
