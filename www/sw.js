@@ -2,20 +2,20 @@
 
 const CACHE_NAME = 'tetris-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/src/main.js',
-  '/src/style.css',
-  '/src/constants.js',
-  '/src/game/Board.js',
-  '/src/game/Piece.js',
-  '/src/game/Game.js',
-  '/src/render/Renderer.js',
-  '/src/input/TouchInput.js',
-  '/src/storage/Storage.js',
-  '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
+  '.',
+  'index.html',
+  'src/main.js',
+  'src/style.css',
+  'src/constants.js',
+  'src/game/Board.js',
+  'src/game/Piece.js',
+  'src/game/Game.js',
+  'src/render/Renderer.js',
+  'src/input/TouchInput.js',
+  'src/storage/Storage.js',
+  'manifest.json',
+  'icons/icon-192.svg',
+  'icons/icon-512.svg',
 ];
 
 // 安装：缓存所有静态资源

@@ -5,7 +5,7 @@ import { Storage } from './storage/Storage.js';
 
 // 注册 Service Worker（PWA 离线支持）
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {
+  navigator.serviceWorker.register('sw.js').catch(() => {
     // Service Worker 注册失败，不影响游戏运行
   });
 }
