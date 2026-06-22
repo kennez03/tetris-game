@@ -1,0 +1,19 @@
+{
+  "name": "tetris-game",
+  "version": "1.0.0",
+  "description": "移动端俄罗斯方块 - Android WebView App",
+  "private": true,
+  "scripts": {
+    "dev": "py -m http.server 3000 -d .",
+    "cap:init": "npx cap init",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:build": "npx cap build android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^4.8.2",
+    "@capacitor/cli": "^4.8.2",
+    "@capacitor/core": "^4.8.2"
+  }
+}

@@ -1,0 +1,159 @@
+/* ─── 全局重置 ─── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1a2e;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: none;
+}
+
+/* ─── 容器 ─── */
+#app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#game-canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* ─── UI 覆盖层 ─── */
+#ui-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(26, 26, 46, 0.92);
+  pointer-events: auto;
+  transition: opacity 0.3s ease;
+}
+
+.screen.hidden {
+  display: none;
+  opacity: 0;
+}
+
+.screen h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #00f0f0, #a000f0, #f0a000);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── 按钮 ─── */
+.btn-primary {
+  pointer-events: auto;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.9rem 2.8rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* ─── 分数显示 ─── */
+.high-score {
+  margin-top: 1.2rem;
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.final-score {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: rgba(255,255,255,0.8);
+}
+
+.final-score span {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+/* ─── 触控按钮面板 ─── */
+.touch-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  background: rgba(15, 15, 26, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.touch-btn {
+  flex: 1;
+  max-width: 70px;
+  height: 52px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  transition: background 0.1s;
+}
+
+.touch-btn:active {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ─── 适配刘海屏 ─── */
+@supports (padding: max(0px)) {
+  .touch-panel {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(4px, env(safe-area-inset-left));
+    padding-right: max(4px, env(safe-area-inset-right));
+  }
+}

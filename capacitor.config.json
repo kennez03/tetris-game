@@ -1,0 +1,6 @@
+{
+  "appId": "com.tetris.game",
+  "appName": "俄罗斯方块",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
