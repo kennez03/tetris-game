@@ -34,15 +34,13 @@ export class Renderer {
 
   /** 计算游戏板布局 */
   _calculateLayout(w, h) {
-    // 触控按钮面板高度（固定值，与 CSS 一致）
-    const buttonPanelH = Math.max(60, h * 0.1);
-    // 顶部信息栏高度（HOLD / 分数 / NEXT）
-    const topInfoH = Math.max(44, h * 0.05);
+    // 触控按钮面板高度（与 CSS 保持一致）
+    const buttonPanelH = Math.max(56, h * 0.09);
 
-    // 棋盘可用高度 = 屏幕 - 顶部信息栏 - 触控按钮
-    const boardAreaH = h - topInfoH - buttonPanelH;
+    // 棋盘可用高度 = 全屏 - 触控按钮 - 顶部留白 2px
+    const boardAreaH = h - buttonPanelH - 2;
 
-    // 根据宽高计算 cell 尺寸
+    // 根据宽高计算 cell 尺寸（让棋盘尽可能大）
     const cellFromW = (w - 4) / COLS;
     const cellFromH = boardAreaH / ROWS;
 
@@ -52,12 +50,9 @@ export class Renderer {
     this.boardPixelWidth = this.cellSize * COLS;
     this.boardPixelHeight = this.cellSize * ROWS;
 
-    // 棋盘居中
+    // 棋盘居中（横向居中，纵向紧贴按钮上方）
     this.boardX = Math.floor((w - this.boardPixelWidth) / 2);
-    this.boardY = Math.floor((h - buttonPanelH - this.boardPixelHeight) / 2);
-
-    // 顶部信息栏位置
-    this.topInfoY = Math.max(0, this.boardY - topInfoH);
+    this.boardY = Math.floor(h - buttonPanelH - this.boardPixelHeight);
   }
 
   /** 主渲染循环 */
@@ -207,56 +202,53 @@ export class Renderer {
     ctx.fillRect(x + innerSize - 2, y + inset, 2, innerSize);
   }
 
-  /** 绘制顶部信息栏（HOLD / 分数 / NEXT） */
+  /** 在棋盘上叠加绘制 HOLD / NEXT / 分数 */
   _drawSidePanels(game) {
     const ctx = this.ctx;
-    const { cellSize, boardX, boardY, boardPixelWidth, topInfoY } = this;
-    const infoH = Math.max(40, this.topInfoY !== undefined ? boardY - topInfoY : 44);
-    const gap = 6;
+    const { cellSize, boardX, boardY, boardPixelWidth } = this;
+    const pad = Math.max(4, cellSize * 0.15);
 
-    // 信息栏背景
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    ctx.fillRect(boardX, topInfoY, boardPixelWidth, infoH);
+    // ─── 左上：HOLD（叠加在棋盘上） ───
+    const miniW = cellSize * 3.2;
+    const miniH = cellSize * 2.6;
+    this._drawMiniOverlay(ctx, boardX + pad, boardY + pad, miniW, miniH, 'HOLD', game.holdPiece, cellSize);
 
-    // ─── 左：HOLD ───
-    const holdBoxW = cellSize * 2.2;
-    const holdBoxH = infoH - gap * 2;
-    this._drawMiniPanel(ctx, boardX + gap, topInfoY + gap, holdBoxW, holdBoxH, 'HOLD', game.holdPiece, cellSize);
+    // ─── 右上：NEXT（叠加在棋盘上） ───
+    this._drawMiniOverlay(ctx, boardX + boardPixelWidth - miniW - pad, boardY + pad, miniW, miniH, 'NEXT', game.nextPiece?.type || null, cellSize);
 
-    // ─── 中：分数 ───
+    // ─── 顶上中间：分数 ───
     const centerX = boardX + boardPixelWidth / 2;
-    const infoY = topInfoY + infoH / 2;
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.font = `bold ${Math.min(14, cellSize * 0.45)}px sans-serif`;
+    const scoreY = boardY + pad + cellSize * 0.4;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    const scoreText = `得分 ${game.score}  等级 ${game.level}`;
+    const fontSize = Math.max(12, Math.min(16, cellSize * 0.5));
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    const textW = ctx.measureText(scoreText).width;
+    ctx.fillRect(centerX - textW / 2 - 6, scoreY - fontSize, textW + 12, fontSize + 4);
+    ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
-    ctx.fillText(`得分 ${game.score}  等级 ${game.level}  行 ${game.lines}`, centerX, infoY + 4);
-
-    // ─── 右：NEXT ───
-    const nextBoxW = cellSize * 2.2;
-    const nextBoxH = infoH - gap * 2;
-    this._drawMiniPanel(ctx, boardX + boardPixelWidth - nextBoxW - gap, topInfoY + gap, nextBoxW, nextBoxH, 'NEXT', game.nextPiece?.type || null, cellSize);
+    ctx.fillText(scoreText, centerX, scoreY - 2);
   }
 
-  /** 绘制迷你信息框（HOLD / NEXT） */
-  _drawMiniPanel(ctx, x, y, w, h, label, pieceType, cellSize) {
-    // 背景边框
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  /** 在棋盘上绘制半透明叠加信息框 */
+  _drawMiniOverlay(ctx, x, y, w, h, label, pieceType, cellSize) {
+    // 半透明背景
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 0.5;
     ctx.strokeRect(x, y, w, h);
 
     // Label
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.font = `${Math.min(10, cellSize * 0.35)}px sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = `bold ${Math.max(10, Math.min(13, cellSize * 0.35))}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(label, x + w / 2, y + 12);
+    ctx.fillText(label, x + w / 2, y + Math.max(14, cellSize * 0.4));
 
     // Piece preview
     if (pieceType) {
       const shape = SHAPES[pieceType][0];
-      const ps = Math.min(cellSize * 0.4, 12);
-      // 居中
+      const ps = Math.max(8, Math.min(14, cellSize * 0.45));
       let minC = 4, maxC = 0, minR = 4, maxR = 0;
       for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
@@ -269,16 +261,19 @@ export class Renderer {
       const pw = (maxC - minC + 1) * ps;
       const ph = (maxR - minR + 1) * ps;
       const ox = x + (w - pw) / 2 - minC * ps;
-      const oy = y + (h - ph) / 2 - minR * ps + 4;
+      const oy = y + (h - ph) / 2 - minR * ps + Math.max(6, cellSize * 0.2);
+      ctx.fillStyle = COLORS[pieceType];
       for (let r = 0; r < 4; r++) {
         for (let c = 0; c < 4; c++) {
           if (shape[r][c]) {
-            this._drawCell(ctx, ox + c * ps, oy + r * ps, ps, COLORS[pieceType]);
+            ctx.fillRect(ox + c * ps + 1, oy + r * ps + 1, ps - 2, ps - 2);
           }
         }
       }
     }
   }
+
+
 
   /** 绘制遮罩 */
   _drawOverlay(title, subtitle) {
