@@ -40,10 +40,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 拦截请求：缓存优先
+// 拦截请求：缓存优先，网络失败时返回缓存的首页
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((cached) => cached || fetch(event.request))
+      .catch(() => caches.match('index.html'))
   );
 });
